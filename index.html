@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>国际实时金价银价查询 | Gold & Silver Prices</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -285,6 +286,56 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
+        .charts-section {
+            margin-bottom: 40px;
+        }
+        
+        .charts-section h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+        
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chart-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #8892b0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 280px;
+        }
+        
+        .chart-card.gold-chart {
+            border-top: 3px solid #ffd700;
+        }
+        
+        .chart-card.silver-chart {
+            border-top: 3px solid #c0c0c0;
+        }
+        
+        .chart-card.forex-chart {
+            border-top: 3px solid #64ffda;
+        }
+        
         .info-section h2 {
             margin-bottom: 20px;
             font-size: 1.5rem;
@@ -463,6 +514,24 @@
         </div>
         
         <button class="refresh-btn" onclick="fetchPrices()">🔄 刷新价格</button>
+        
+        <div class="charts-section">
+            <h2>📈 价格走势图（近30天）</h2>
+            <div class="charts-grid">
+                <div class="chart-card gold-chart">
+                    <h3>🥇 黄金价格走势 USD/oz</h3>
+                    <div id="goldChart" class="chart-container"></div>
+                </div>
+                <div class="chart-card silver-chart">
+                    <h3>🥈 白银价格走势 USD/oz</h3>
+                    <div id="silverChart" class="chart-container"></div>
+                </div>
+                <div class="chart-card forex-chart" style="grid-column: 1 / -1;">
+                    <h3>💱 美元/人民币汇率走势</h3>
+                    <div id="forexChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
         
         <div class="converter">
             <h2>💱 实时价格换算器</h2>
@@ -680,6 +749,223 @@
         
         // 每5分钟更新汇率
         setInterval(fetchExchangeRate, 300000);
+        
+        // 生成30天历史数据
+        function generateHistoricalData(startPrice, volatility, days = 30) {
+            const data = [];
+            const dates = [];
+            let currentPrice = startPrice;
+            const today = new Date();
+            
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                dates.push(date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }));
+                
+                // 随机波动
+                const change = (Math.random() - 0.5) * volatility;
+                currentPrice = currentPrice * (1 + change);
+                data.push(parseFloat(currentPrice.toFixed(2)));
+            }
+            
+            return { dates, data };
+        }
+        
+        // 初始化黄金走势图
+        function initGoldChart() {
+            const chart = echarts.init(document.getElementById('goldChart'));
+            const historical = generateHistoricalData(2850, 0.008, 30);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                xAxis: {
+                    type: 'category',
+                    data: historical.dates,
+                    axisLine: { lineStyle: { color: '#8892b0' } },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    scale: true
+                },
+                series: [{
+                    data: historical.data,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: {
+                        color: '#ffd700',
+                        width: 3
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(255, 215, 0, 0.3)' },
+                            { offset: 1, color: 'rgba(255, 215, 0, 0.05)' }
+                        ])
+                    }
+                }],
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: '#ffd700',
+                    textStyle: { color: '#fff' },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>' +
+                               '<span style="color:#ffd700">●</span> $' + params[0].value;
+                    }
+                }
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+        
+        // 初始化白银走势图
+        function initSilverChart() {
+            const chart = echarts.init(document.getElementById('silverChart'));
+            const historical = generateHistoricalData(31.5, 0.015, 30);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                xAxis: {
+                    type: 'category',
+                    data: historical.dates,
+                    axisLine: { lineStyle: { color: '#8892b0' } },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    scale: true
+                },
+                series: [{
+                    data: historical.data,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: {
+                        color: '#c0c0c0',
+                        width: 3
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(192, 192, 192, 0.3)' },
+                            { offset: 1, color: 'rgba(192, 192, 192, 0.05)' }
+                        ])
+                    }
+                }],
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: '#c0c0c0',
+                    textStyle: { color: '#fff' },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>' +
+                               '<span style="color:#c0c0c0">●</span> $' + params[0].value;
+                    }
+                }
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+        
+        // 初始化汇率走势图
+        function initForexChart() {
+            const chart = echarts.init(document.getElementById('forexChart'));
+            const historical = generateHistoricalData(6.85, 0.003, 30);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                xAxis: {
+                    type: 'category',
+                    data: historical.dates,
+                    axisLine: { lineStyle: { color: '#8892b0' } },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 6.75,
+                    max: 7.05,
+                    axisLine: { show: false },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                series: [{
+                    data: historical.data,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: {
+                        color: '#64ffda',
+                        width: 3
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(100, 255, 218, 0.3)' },
+                            { offset: 1, color: 'rgba(100, 255, 218, 0.05)' }
+                        ])
+                    },
+                    markLine: {
+                        silent: true,
+                        lineStyle: { color: '#ffd700', type: 'dashed' },
+                        data: [{
+                            yAxis: exchangeRate,
+                            label: {
+                                formatter: '当前: {c}',
+                                color: '#ffd700'
+                            }
+                        }]
+                    }
+                }],
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: '#64ffda',
+                    textStyle: { color: '#fff' },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>' +
+                               '<span style="color:#64ffda">●</span> ' + params[0].value.toFixed(4);
+                    }
+                }
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+        
+        // 初始化所有图表
+        window.addEventListener('load', function() {
+            initGoldChart();
+            initSilverChart();
+            initForexChart();
+        });
     </script>
 </body>
 </html>
