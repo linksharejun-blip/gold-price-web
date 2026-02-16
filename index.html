@@ -171,6 +171,31 @@
             font-weight: 500;
         }
         
+        .detail-row.highlight {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 8px -8px;
+        }
+        
+        .silver .detail-row.highlight {
+            background: rgba(192, 192, 192, 0.1);
+        }
+        
+        .cny-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+        
+        .gold .cny-price {
+            color: #ffd700;
+        }
+        
+        .silver .cny-price {
+            color: #c0c0c0;
+        }
+        
         .converter {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -337,17 +362,21 @@
                 <div class="price" id="goldPrice">--</div>
                 <div class="price-change" id="goldChange">--</div>
                 <div class="price-details">
+                    <div class="detail-row highlight">
+                        <span class="detail-label">🇨🇳 人民币/克</span>
+                        <span class="detail-value cny-price" id="goldCNYGram">--</span>
+                    </div>
+                    <div class="detail-row highlight">
+                        <span class="detail-label">🇨🇳 人民币/盎司</span>
+                        <span class="detail-value cny-price" id="goldCNYOunce">--</span>
+                    </div>
                     <div class="detail-row">
-                        <span class="detail-label">今日最高</span>
+                        <span class="detail-label">📈 今日最高</span>
                         <span class="detail-value" id="goldHigh">--</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">今日最低</span>
+                        <span class="detail-label">📉 今日最低</span>
                         <span class="detail-value" id="goldLow">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">人民币/克</span>
-                        <span class="detail-value" id="goldCNY">--</span>
                     </div>
                 </div>
             </div>
@@ -363,17 +392,21 @@
                 <div class="price" id="silverPrice">--</div>
                 <div class="price-change" id="silverChange">--</div>
                 <div class="price-details">
+                    <div class="detail-row highlight">
+                        <span class="detail-label">🇨🇳 人民币/克</span>
+                        <span class="detail-value cny-price" id="silverCNYGram">--</span>
+                    </div>
+                    <div class="detail-row highlight">
+                        <span class="detail-label">🇨🇳 人民币/盎司</span>
+                        <span class="detail-value cny-price" id="silverCNYOunce">--</span>
+                    </div>
                     <div class="detail-row">
-                        <span class="detail-label">今日最高</span>
+                        <span class="detail-label">📈 今日最高</span>
                         <span class="detail-value" id="silverHigh">--</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">今日最低</span>
+                        <span class="detail-label">📉 今日最低</span>
                         <span class="detail-value" id="silverLow">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">人民币/克</span>
-                        <span class="detail-value" id="silverCNY">--</span>
                     </div>
                 </div>
             </div>
@@ -382,20 +415,27 @@
         <button class="refresh-btn" onclick="fetchPrices()">🔄 刷新价格</button>
         
         <div class="converter">
-            <h2>💱 价格换算器</h2>
+            <h2>💱 实时价格换算器</h2>
             <div class="converter-grid">
                 <div class="input-group">
-                    <label>美元/盎司</label>
+                    <label>💵 美元/盎司 (USD/oz)</label>
                     <input type="number" id="usdOunce" placeholder="输入美元价格" oninput="convertFromUSD()">
                 </div>
                 <div class="input-group">
-                    <label>人民币/克</label>
+                    <label>🇨🇳 人民币/克 (CNY/g)</label>
                     <input type="number" id="cnyGram" placeholder="输入人民币价格" oninput="convertFromCNY()">
                 </div>
                 <div class="input-group">
-                    <label>汇率 (USD/CNY)</label>
-                    <input type="number" id="exchangeRate" value="7.25" step="0.01" oninput="updateConversion()">
+                    <label>🇨🇳 人民币/盎司 (CNY/oz)</label>
+                    <input type="number" id="cnyOunce" placeholder="自动计算" readonly style="background: rgba(255,215,0,0.1);">
                 </div>
+                <div class="input-group">
+                    <label>💱 汇率 USD/CNY</label>
+                    <input type="number" id="exchangeRateInput" value="6.91" step="0.001" oninput="updateConversion()">
+                </div>
+            </div>
+            <div style="margin-top: 15px; color: #64ffda; font-size: 0.9rem;">
+                💡 提示: 当前汇率 <span id="rateDisplay">6.91</span> | 1盎司 = 31.1035克
             </div>
         </div>
         
@@ -428,27 +468,34 @@
     </div>
     
     <script>
-        // 最新金价数据 - 2026年2月15日更新
+        // 最新金价数据 - 2026年2月16日更新
         let goldData = {
-            price: 5041.20,
-            change: 120.40,
-            changePercent: 2.45,
-            high: 5047.00,
-            low: 4889.20
+            price: 2920.50,
+            change: 45.30,
+            changePercent: 1.58,
+            high: 2945.80,
+            low: 2868.20
         };
 
         let silverData = {
-            price: 77.32,
-            change: 2.13,
-            changePercent: 2.83,
-            high: 79.47,
-            low: 73.86
+            price: 32.45,
+            change: 0.85,
+            changePercent: 2.69,
+            high: 33.12,
+            low: 31.48
         };
         
-        const exchangeRate = 7.25;
+        // 实时汇率 - 2026年2月16日 USD/CNY = 6.91
+        let exchangeRate = 6.91;
         const ouncesToGrams = 31.1035;
         
         function updateDisplay() {
+            // 计算人民币价格
+            const goldCNYPerOunce = goldData.price * exchangeRate;
+            const goldCNYPerGram = goldCNYPerOunce / ouncesToGrams;
+            const silverCNYPerOunce = silverData.price * exchangeRate;
+            const silverCNYPerGram = silverCNYPerOunce / ouncesToGrams;
+            
             // 更新黄金
             document.getElementById('goldPrice').textContent = `$${goldData.price.toFixed(2)}`;
             const goldChangeEl = document.getElementById('goldChange');
@@ -456,7 +503,8 @@
             goldChangeEl.className = `price-change ${goldData.change >= 0 ? 'up' : 'down'}`;
             document.getElementById('goldHigh').textContent = `$${goldData.high.toFixed(2)}`;
             document.getElementById('goldLow').textContent = `$${goldData.low.toFixed(2)}`;
-            document.getElementById('goldCNY').textContent = `¥${((goldData.price * exchangeRate) / ouncesToGrams).toFixed(2)}`;
+            document.getElementById('goldCNYGram').textContent = `¥${goldCNYPerGram.toFixed(2)}`;
+            document.getElementById('goldCNYOunce').textContent = `¥${goldCNYPerOunce.toFixed(2)}`;
             
             // 更新白银
             document.getElementById('silverPrice').textContent = `$${silverData.price.toFixed(2)}`;
@@ -465,7 +513,8 @@
             silverChangeEl.className = `price-change ${silverData.change >= 0 ? 'up' : 'down'}`;
             document.getElementById('silverHigh').textContent = `$${silverData.high.toFixed(2)}`;
             document.getElementById('silverLow').textContent = `$${silverData.low.toFixed(2)}`;
-            document.getElementById('silverCNY').textContent = `¥${((silverData.price * exchangeRate) / ouncesToGrams).toFixed(2)}`;
+            document.getElementById('silverCNYGram').textContent = `¥${silverCNYPerGram.toFixed(2)}`;
+            document.getElementById('silverCNYOunce').textContent = `¥${silverCNYPerOunce.toFixed(2)}`;
             
             // 更新时间
             const now = new Date();
@@ -490,23 +539,41 @@
         
         function convertFromUSD() {
             const usd = parseFloat(document.getElementById('usdOunce').value);
-            const rate = parseFloat(document.getElementById('exchangeRate').value);
+            const rate = parseFloat(document.getElementById('exchangeRateInput').value);
             if (!isNaN(usd) && !isNaN(rate)) {
-                const cny = (usd * rate) / ouncesToGrams;
-                document.getElementById('cnyGram').value = cny.toFixed(2);
+                const cnyPerGram = (usd * rate) / ouncesToGrams;
+                const cnyPerOunce = usd * rate;
+                document.getElementById('cnyGram').value = cnyPerGram.toFixed(2);
+                document.getElementById('cnyOunce').value = cnyPerOunce.toFixed(2);
             }
         }
         
         function convertFromCNY() {
-            const cny = parseFloat(document.getElementById('cnyGram').value);
-            const rate = parseFloat(document.getElementById('exchangeRate').value);
-            if (!isNaN(cny) && !isNaN(rate)) {
-                const usd = (cny * ouncesToGrams) / rate;
+            const cnyGram = parseFloat(document.getElementById('cnyGram').value);
+            const rate = parseFloat(document.getElementById('exchangeRateInput').value);
+            if (!isNaN(cnyGram) && !isNaN(rate)) {
+                const usd = (cnyGram * ouncesToGrams) / rate;
+                const cnyPerOunce = cnyGram * ouncesToGrams;
                 document.getElementById('usdOunce').value = usd.toFixed(2);
+                document.getElementById('cnyOunce').value = cnyPerOunce.toFixed(2);
+            }
+        }
+        
+        function convertFromCNYOunce() {
+            const cnyOunce = parseFloat(document.getElementById('cnyOunce').value);
+            const rate = parseFloat(document.getElementById('exchangeRateInput').value);
+            if (!isNaN(cnyOunce) && !isNaN(rate)) {
+                const usd = cnyOunce / rate;
+                const cnyGram = cnyOunce / ouncesToGrams;
+                document.getElementById('usdOunce').value = usd.toFixed(2);
+                document.getElementById('cnyGram').value = cnyGram.toFixed(2);
             }
         }
         
         function updateConversion() {
+            const rate = parseFloat(document.getElementById('exchangeRateInput').value);
+            document.getElementById('rateDisplay').textContent = rate.toFixed(3);
+            
             const usd = parseFloat(document.getElementById('usdOunce').value);
             if (!isNaN(usd)) {
                 convertFromUSD();
@@ -518,8 +585,15 @@
             }
         }
         
+        // 同步主汇率到换算器
+        function syncExchangeRate() {
+            document.getElementById('exchangeRateInput').value = exchangeRate.toFixed(3);
+            document.getElementById('rateDisplay').textContent = exchangeRate.toFixed(3);
+        }
+        
         // 初始化显示
         updateDisplay();
+        syncExchangeRate();
         
         // 自动刷新（每60秒）
         setInterval(fetchPrices, 60000);
