@@ -323,6 +323,36 @@
             width: 100%;
             height: 280px;
         }
+
+        .time-range-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .time-btn {
+            padding: 8px 20px;
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            background: rgba(100, 255, 218, 0.1);
+            color: #64ffda;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .time-btn:hover {
+            background: rgba(100, 255, 218, 0.2);
+        }
+
+        .time-btn.active {
+            background: linear-gradient(135deg, #64ffda, #00b894);
+            color: #1a1a2e;
+            border-color: transparent;
+            font-weight: bold;
+        }
         
         .chart-card.gold-chart {
             border-top: 3px solid #ffd700;
@@ -479,6 +509,10 @@
                         <span class="detail-label">📉 今日最低</span>
                         <span class="detail-value" id="goldLow">--</span>
                     </div>
+                    <div class="detail-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,215,0,0.3);">
+                        <span class="detail-label">💰 定投建议</span>
+                        <span class="detail-value" id="goldDCA" style="font-size: 0.85rem;">参考区间: $1800-1900</span>
+                    </div>
                 </div>
             </div>
             
@@ -509,6 +543,10 @@
                         <span class="detail-label">📉 今日最低</span>
                         <span class="detail-value" id="silverLow">--</span>
                     </div>
+                    <div class="detail-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(192,192,192,0.3);">
+                        <span class="detail-label">💰 定投建议</span>
+                        <span class="detail-value" id="silverDCA" style="font-size: 0.85rem;">参考区间: $20-23</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -516,7 +554,28 @@
         <button class="refresh-btn" onclick="fetchPrices()">🔄 刷新价格</button>
         
         <div class="charts-section">
-            <h2>📈 价格走势图（近30天）</h2>
+            <h2>📈 价格走势图</h2>
+
+            <!-- 小时走势图 -->
+            <div class="time-range-selector">
+                <button class="time-btn active" onclick="switchTimeRange('1h')">1小时</button>
+                <button class="time-btn" onclick="switchTimeRange('24h')">24小时</button>
+                <button class="time-btn" onclick="switchTimeRange('7d')">7天</button>
+                <button class="time-btn" onclick="switchTimeRange('30d')">30天</button>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card gold-chart">
+                    <h3>🥇 黄金价格走势（美元/盎司）- <span id="goldTimeLabel">1小时</span></h3>
+                    <div id="goldHourlyChart" class="chart-container"></div>
+                </div>
+                <div class="chart-card silver-chart">
+                    <h3>🥈 白银价格走势（美元/盎司）- <span id="silverTimeLabel">1小时</span></h3>
+                    <div id="silverHourlyChart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <!-- 长期走势图 -->
+            <h2 style="margin-top: 40px;">📊 长期趋势图（30天）</h2>
             <div class="charts-grid">
                 <div class="chart-card gold-chart">
                     <h3>🥇 黄金价格走势（美元/盎司）</h3>
@@ -569,13 +628,21 @@
                     <h3>🥈 白银</h3>
                     <p>历史低位: $18-22<br>历史高位: $25-30<br>波动较大，适合风险承受能力强者</p>
                 </div>
+                <div class="info-item" style="border: 1px solid rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.05);">
+                    <h3 style="color: #ffd700;">💰 定投参考区间</h3>
+                    <p><strong>黄金:</strong> $1,800-1,900 可考虑定投<br><strong>白银:</strong> $20-23 可考虑定投<br><span style="color: #64ffda;">当前金价远高于定投区间，建议观望</span></p>
+                </div>
                 <div class="info-item">
                     <h3>💡 投资建议</h3>
                     <p>• 定投优于一次性买入<br>• 分散投资降低风险<br>• 长期持有3-5年以上</p>
                 </div>
+                <div class="info-item" style="border: 1px solid rgba(231, 76, 60, 0.3); background: rgba(231, 76, 60, 0.05);">
+                    <h3 style="color: #e74c3c;">⚠️ 风险提示</h3>
+                    <p>• 贵金属价格波动大<br>• 投资有风险，入市需谨慎<br>• 建议分散投资、长期持有</p>
+                </div>
                 <div class="info-item">
-                    <h3>⚠️ 风险提示</h3>
-                    <p>• 贵金属价格波动大<br>• 关注美联储政策<br>• 地缘政治影响显著</p>
+                    <h3>📈 影响因素</h3>
+                    <p>• 关注美联储政策<br>• 地缘政治影响显著<br>• 美元汇率波动关联</p>
                 </div>
             </div>
         </div>
@@ -756,19 +823,262 @@
             const dates = [];
             let currentPrice = startPrice;
             const today = new Date();
-            
+
             for (let i = days - 1; i >= 0; i--) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
                 dates.push(date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }));
-                
+
                 // 随机波动
                 const change = (Math.random() - 0.5) * volatility;
                 currentPrice = currentPrice * (1 + change);
                 data.push(parseFloat(currentPrice.toFixed(2)));
             }
-            
+
             return { dates, data };
+        }
+
+        // 生成小时级历史数据
+        function generateHourlyData(startPrice, volatility, hours = 24) {
+            const data = [];
+            const times = [];
+            let currentPrice = startPrice;
+            const now = new Date();
+
+            for (let i = hours - 1; i >= 0; i--) {
+                const time = new Date(now);
+                time.setMinutes(time.getMinutes() - i * 5); // 每5分钟一个数据点
+                times.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
+
+                // 随机波动（小时级波动更小）
+                const change = (Math.random() - 0.5) * volatility * 0.3;
+                currentPrice = currentPrice * (1 + change);
+                data.push(parseFloat(currentPrice.toFixed(2)));
+            }
+
+            return { times, data };
+        }
+
+        // 生成分钟级数据（用于1小时图）
+        function generateMinuteData(startPrice, volatility, minutes = 60) {
+            const data = [];
+            const times = [];
+            let currentPrice = startPrice;
+            const now = new Date();
+
+            for (let i = minutes - 1; i >= 0; i--) {
+                const time = new Date(now);
+                time.setMinutes(time.getMinutes() - i);
+                times.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
+
+                // 分钟级波动更小
+                const change = (Math.random() - 0.5) * volatility * 0.1;
+                currentPrice = currentPrice * (1 + change);
+                data.push(parseFloat(currentPrice.toFixed(2)));
+            }
+
+            return { times, data };
+        }
+
+        // 当前选择的时间范围
+        let currentTimeRange = '1h';
+        let goldHourlyChart, silverHourlyChart;
+
+        // 切换时间范围
+        function switchTimeRange(range) {
+            currentTimeRange = range;
+
+            // 更新按钮状态
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 更新标签
+            const labelMap = {
+                '1h': '1小时',
+                '24h': '24小时',
+                '7d': '7天',
+                '30d': '30天'
+            };
+            document.getElementById('goldTimeLabel').textContent = labelMap[range];
+            document.getElementById('silverTimeLabel').textContent = labelMap[range];
+
+            // 重新初始化小时走势图
+            initGoldHourlyChart();
+            initSilverHourlyChart();
+        }
+
+        // 根据时间范围获取数据
+        function getChartDataByRange(basePrice, volatility, range) {
+            switch(range) {
+                case '1h':
+                    return generateMinuteData(basePrice, volatility, 60);
+                case '24h':
+                    return generateHourlyData(basePrice, volatility, 24);
+                case '7d':
+                    return generateHistoricalData(basePrice, volatility, 7);
+                case '30d':
+                default:
+                    return generateHistoricalData(basePrice, volatility, 30);
+            }
+        }
+
+        // 获取X轴标签
+        function getXAxisLabel(range) {
+            switch(range) {
+                case '1h':
+                case '24h':
+                    return 'times';
+                case '7d':
+                case '30d':
+                default:
+                    return 'dates';
+            }
+        }
+
+        // 初始化黄金小时走势图
+        function initGoldHourlyChart() {
+            if (goldHourlyChart) {
+                goldHourlyChart.dispose();
+            }
+            goldHourlyChart = echarts.init(document.getElementById('goldHourlyChart'));
+
+            const data = getChartDataByRange(goldData.price, 0.008, currentTimeRange);
+            const xAxisKey = getXAxisLabel(currentTimeRange);
+
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data[xAxisKey],
+                    axisLine: { lineStyle: { color: '#8892b0' } },
+                    axisLabel: {
+                        color: '#8892b0',
+                        fontSize: 10,
+                        interval: currentTimeRange === '1h' ? 9 : (currentTimeRange === '24h' ? 2 : 'auto')
+                    },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    scale: true
+                },
+                series: [{
+                    data: data.data,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: {
+                        color: '#ffd700',
+                        width: 2
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(255, 215, 0, 0.4)' },
+                            { offset: 1, color: 'rgba(255, 215, 0, 0.05)' }
+                        ])
+                    }
+                }],
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: '#ffd700',
+                    textStyle: { color: '#fff' },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>' +
+                               '<span style="color:#ffd700">●</span> $' + params[0].value;
+                    }
+                },
+                dataZoom: currentTimeRange === '1h' ? [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }] : undefined
+            };
+
+            goldHourlyChart.setOption(option);
+        }
+
+        // 初始化白银小时走势图
+        function initSilverHourlyChart() {
+            if (silverHourlyChart) {
+                silverHourlyChart.dispose();
+            }
+            silverHourlyChart = echarts.init(document.getElementById('silverHourlyChart'));
+
+            const data = getChartDataByRange(silverData.price, 0.015, currentTimeRange);
+            const xAxisKey = getXAxisLabel(currentTimeRange);
+
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    top: 20,
+                    right: 20,
+                    bottom: 30,
+                    left: 60
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data[xAxisKey],
+                    axisLine: { lineStyle: { color: '#8892b0' } },
+                    axisLabel: {
+                        color: '#8892b0',
+                        fontSize: 10,
+                        interval: currentTimeRange === '1h' ? 9 : (currentTimeRange === '24h' ? 2 : 'auto')
+                    },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    axisLabel: { color: '#8892b0', fontSize: 10 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    scale: true
+                },
+                series: [{
+                    data: data.data,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: {
+                        color: '#c0c0c0',
+                        width: 2
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(192, 192, 192, 0.4)' },
+                            { offset: 1, color: 'rgba(192, 192, 192, 0.05)' }
+                        ])
+                    }
+                }],
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                    borderColor: '#c0c0c0',
+                    textStyle: { color: '#fff' },
+                    formatter: function(params) {
+                        return params[0].name + '<br/>' +
+                               '<span style="color:#c0c0c0">●</span> $' + params[0].value;
+                    }
+                },
+                dataZoom: currentTimeRange === '1h' ? [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }] : undefined
+            };
+
+            silverHourlyChart.setOption(option);
         }
         
         // 初始化黄金走势图
@@ -965,6 +1275,14 @@
             initGoldChart();
             initSilverChart();
             initForexChart();
+            initGoldHourlyChart();
+            initSilverHourlyChart();
+        });
+
+        // 窗口大小改变时重新调整图表
+        window.addEventListener('resize', function() {
+            if (goldHourlyChart) goldHourlyChart.resize();
+            if (silverHourlyChart) silverHourlyChart.resize();
         });
     </script>
 </body>
